@@ -1,12 +1,31 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
+import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { SwingMetrics } from "shared";
 
 const apiKey = process.env.GEMINI_API_KEY || "DUMMY_KEY";
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+const MODEL_NAME = "gemini-3-flash";
 
-async function uploadToGemini(filePath: string, mimeType: string) {
+const genAI = new GoogleGenerativeAI(apiKey);
+const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+const fileManager = new GoogleAIFileManager(apiKey);
+
+async function uploadToGeminiFileAPI(filePath: string, mimeType: string, displayName: string) {
+  const uploadResult = await fileManager.uploadFile(filePath, {
+    mimeType,
+    displayName,
+  });
+  console.log(`Uploaded file to Gemini: ${uploadResult.file.displayName} (${uploadResult.file.uri})`);
+  return {
+    fileData: {
+      mimeType: uploadResult.file.mimeType,
+      fileUri: uploadResult.file.uri,
+    },
+  };
+}
+
+async function uploadToGeminiInline(filePath: string, mimeType: string) {
+  const fs = await import("fs");
   const fileBytes = fs.readFileSync(filePath);
   return {
     inlineData: {
@@ -21,7 +40,7 @@ export async function analyzeSwingVideo(videoPath: string, club: string, mimeTyp
 
   try {
     console.log(`Analyzing video: ${videoPath} for club: ${club} with MIME: ${mimeType}`);
-    const videoPart = await uploadToGemini(videoPath, mimeType);
+    const videoPart = await uploadToGeminiFileAPI(videoPath, mimeType, `swing-${Date.now()}`);
 
     const prompt = `
             You are an expert golf coach and biomechanics specialist. 
@@ -74,7 +93,7 @@ export async function extractLaunchMonitorData(imagePath: string) {
 
   try {
     console.log(`Extracting data from launch monitor image: ${imagePath}`);
-    const imagePart = await uploadToGemini(imagePath, "image/jpeg");
+    const imagePart = await uploadToGeminiInline(imagePath, "image/jpeg");
 
     const prompt = `
             You are an OCR and data extraction expert for golf launch monitors.
