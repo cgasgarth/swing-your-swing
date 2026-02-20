@@ -1,10 +1,12 @@
 import ffmpeg from 'fluent-ffmpeg';
-import installer from '@ffmpeg-installer/ffmpeg';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 
-ffmpeg.setFfmpegPath(installer.path);
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 const TARGET_SIZE_MB = 25;
 

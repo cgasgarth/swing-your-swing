@@ -1,1 +1,1 @@
-bun run typecheck && bun run lint && bun run test
+bun run typecheck && bun run lint && bun run test && .venv/bin/python3 -m mypy app/api/src/services/pose_analysis.py --config-file mypy.ini
