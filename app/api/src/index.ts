@@ -6,7 +6,8 @@ import multer from "multer";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { db, setupDB } from "./db/index.js";
-import { analyzeSwingVideo, generateLessonRoadmap, extractLaunchMonitorData } from "./services/gemini.service.js";
+import { getCoachingFromPoseData, generateLessonRoadmap, extractLaunchMonitorData } from "./services/gemini.service.js";
+import { analyzePose } from "./services/pose.service.js";
 import { compressVideo } from "./services/video.compression.js";
 import { fileURLToPath } from 'url';
 
@@ -65,8 +66,19 @@ app.post("/api/swings/upload", upload.single("video"), async (req, res) => {
         `);
     insertSwing.run(swingId, playerId, club, videoUrl);
 
-    console.log(`Sending video to Gemini for analysis (Type: ${file.mimetype})...`);
-    const aiData = await analyzeSwingVideo(absolutePath, club, file.mimetype);
+    // Phase 1: Local pose estimation (MediaPipe)
+    let aiData = null;
+    try {
+      console.log(`Running local pose analysis...`);
+      const poseData = await analyzePose(absolutePath);
+
+      // Phase 2: Gemini coaching from pose metadata
+      console.log(`Getting coaching insights from Gemini...`);
+      aiData = await getCoachingFromPoseData(poseData, club);
+    } catch (poseErr) {
+      console.warn("Pose analysis failed:", (poseErr as Error).message);
+      console.warn("Make sure python3, mediapipe, and opencv-python are installed.");
+    }
 
     if (aiData) {
       const insertMetrics = db.prepare(`
@@ -155,14 +167,21 @@ app.post("/api/swings/:id/reprocess", async (req, res) => {
 
     const fileName = path.basename(swing.videoUrl);
     const absolutePath = path.join(UPLOADS_DIR, fileName);
-    const mimeType = fileName.endsWith('.mov') ? 'video/quicktime' : 'video/mp4';
 
     db.prepare('DELETE FROM swing_metrics WHERE swingId = ?').run(swingId);
     db.prepare('DELETE FROM lessons WHERE swingId = ?').run(swingId);
     db.prepare('UPDATE swings SET analyzed = 0 WHERE id = ?').run(swingId);
 
     console.log(`Reprocessing swing ${swingId}...`);
-    const aiData = await analyzeSwingVideo(absolutePath, swing.club, mimeType);
+    let aiData = null;
+    try {
+      console.log(`Running local pose analysis...`);
+      const poseData = await analyzePose(absolutePath);
+      console.log(`Getting coaching insights from Gemini...`);
+      aiData = await getCoachingFromPoseData(poseData, swing.club);
+    } catch (poseErr) {
+      console.warn("Pose analysis failed:", (poseErr as Error).message);
+    }
 
     if (aiData) {
       const insertMetrics = db.prepare(`
