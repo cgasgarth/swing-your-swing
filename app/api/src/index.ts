@@ -19,11 +19,11 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../../../uploads")));
 
 setupDB();
 
-const UPLOADS_DIR = path.join(__dirname, "../../uploads");
+const UPLOADS_DIR = path.join(__dirname, "../../../uploads");
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -34,7 +34,7 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + "-" + file.originalname);
   },
 });
-const upload = multer({ storage });
+const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
 
 
 app.post("/api/swings/upload", upload.single("video"), async (req, res) => {
@@ -177,7 +177,7 @@ app.delete("/api/swings/:id", (req, res) => {
 
     if (swing.videoUrl) {
       const fileName = path.basename(swing.videoUrl);
-      const filePath = path.join(__dirname, "../../uploads", fileName);
+      const filePath = path.join(__dirname, "../../../uploads", fileName);
       import('fs').then(fs => {
         fs.unlink(filePath, (err) => {
           if (err && err.code !== 'ENOENT') {
