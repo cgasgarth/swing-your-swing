@@ -4,7 +4,6 @@ import cors from "cors";
 import morgan from "morgan";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { db, setupDB } from "./db/index.js";
 import { analyzeSwingVideo, generateLessonRoadmap, extractLaunchMonitorData } from "./services/gemini.service.js";
@@ -24,9 +23,11 @@ app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
 
 setupDB();
 
+const UPLOADS_DIR = path.join(__dirname, "../../uploads");
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, "uploads/");
+    cb(null, UPLOADS_DIR);
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -174,10 +175,18 @@ app.delete("/api/swings/:id", (req, res) => {
     db.prepare('DELETE FROM swing_metrics WHERE swingId = ?').run(swingId);
     db.prepare('DELETE FROM swings WHERE id = ?').run(swingId);
 
-    const fileName = swing.videoUrl.replace('/uploads/', '');
-    const filePath = path.join(__dirname, "../../uploads", fileName);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (swing.videoUrl) {
+      const fileName = path.basename(swing.videoUrl);
+      const filePath = path.join(__dirname, "../../uploads", fileName);
+      import('fs').then(fs => {
+        fs.unlink(filePath, (err) => {
+          if (err && err.code !== 'ENOENT') {
+            console.error(`Failed to delete video file ${filePath}:`, err);
+          } else {
+            console.log(`Deleted video file: ${filePath}`);
+          }
+        });
+      });
     }
 
     res.json({ message: "Swing deleted successfully" });
