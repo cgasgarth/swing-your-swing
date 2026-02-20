@@ -22,6 +22,14 @@ export interface Swing {
     videoUrl: string;
     launchMonitorDataId?: string;
     analyzed: boolean;
+    isFavorite?: boolean;
+    createdAt: string;
+}
+
+export interface Comment {
+    id: string;
+    swingId: string;
+    text: string;
     createdAt: string;
 }
 

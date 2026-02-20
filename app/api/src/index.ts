@@ -4,9 +4,11 @@ import cors from "cors";
 import morgan from "morgan";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { db, setupDB } from "./db/index.js";
 import { analyzeSwingVideo, generateLessonRoadmap, extractLaunchMonitorData } from "./services/gemini.service.js";
+import { compressVideo } from "./services/video.compression.js";
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,9 +45,18 @@ app.post("/api/swings/upload", upload.single("video"), async (req, res) => {
       return res.status(400).json({ error: "Missing video file or club type" });
     }
 
+    let absolutePath = file.path;
+    let videoUrl = `/uploads/${file.filename}`;
+
+    try {
+      console.log(`Compressing video...`);
+      absolutePath = await compressVideo(absolutePath);
+      videoUrl = `/uploads/${path.basename(absolutePath)}`;
+    } catch (compressionErr) {
+      console.warn("Video compression failed, proceeding with original file:", compressionErr);
+    }
+
     const swingId = uuidv4();
-    const videoUrl = `/uploads/${file.filename}`;
-    const absolutePath = file.path;
 
     const insertSwing = db.prepare(`
             INSERT INTO swings (id, playerId, club, videoUrl, analyzed) 
@@ -151,6 +162,62 @@ app.get("/api/swings", (_req, res) => {
   }
 });
 
+app.delete("/api/swings/:id", (req, res) => {
+  const swingId = req.params.id;
+  try {
+    const swing = db.prepare('SELECT videoUrl FROM swings WHERE id = ?').get(swingId) as { videoUrl: string } | undefined;
+    if (!swing) return res.status(404).json({ error: "Not found" });
+
+    db.prepare('DELETE FROM comments WHERE swingId = ?').run(swingId);
+    db.prepare('DELETE FROM launch_monitor_data WHERE swingId = ?').run(swingId);
+    db.prepare('DELETE FROM lessons WHERE swingId = ?').run(swingId);
+    db.prepare('DELETE FROM swing_metrics WHERE swingId = ?').run(swingId);
+    db.prepare('DELETE FROM swings WHERE id = ?').run(swingId);
+
+    const fileName = swing.videoUrl.replace('/uploads/', '');
+    const filePath = path.join(__dirname, "../../uploads", fileName);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json({ message: "Swing deleted successfully" });
+  } catch (e: unknown) {
+    console.error(e);
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post("/api/swings/:id/favorite", (req, res) => {
+  const swingId = req.params.id;
+  try {
+    const swing = db.prepare('SELECT isFavorite FROM swings WHERE id = ?').get(swingId) as { isFavorite: number } | undefined;
+    if (!swing) return res.status(404).json({ error: "Not found" });
+
+    const newStatus = swing.isFavorite ? 0 : 1;
+    db.prepare('UPDATE swings SET isFavorite = ? WHERE id = ?').run(newStatus, swingId);
+    res.json({ message: "Favorite status updated", isFavorite: !!newStatus });
+  } catch (e: unknown) {
+    console.error(e);
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post("/api/swings/:id/comments", (req, res) => {
+  const swingId = req.params.id;
+  const { text } = req.body;
+  if (!text || text.trim() === '') return res.status(400).json({ error: "Comment text is required" });
+
+  try {
+    const id = uuidv4();
+    db.prepare('INSERT INTO comments (id, swingId, text) VALUES (?, ?, ?)').run(id, swingId, text);
+    const comment = db.prepare('SELECT * FROM comments WHERE id = ?').get(id);
+    res.status(201).json(comment);
+  } catch (e: unknown) {
+    console.error(e);
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
 app.get("/api/swings/:id", (req, res) => {
   const swingId = req.params.id;
 
@@ -169,8 +236,9 @@ app.get("/api/swings/:id", (req, res) => {
 
   const lessons = db.prepare('SELECT * FROM lessons WHERE swingId = ?').all(swingId);
   const launchData = db.prepare('SELECT * FROM launch_monitor_data WHERE swingId = ?').get(swingId);
+  const comments = db.prepare('SELECT * FROM comments WHERE swingId = ? ORDER BY createdAt DESC').all(swingId);
 
-  res.json({ swing, metrics, lessons, launchData });
+  res.json({ swing, metrics, lessons, launchData, comments });
 });
 
 app.listen(port, () => {

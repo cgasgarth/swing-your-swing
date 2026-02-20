@@ -46,43 +46,45 @@ export function UploadView({ onUploadSuccess }: Props) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-8">
-        <h2 className="text-3xl font-extrabold text-slate-900 mb-6 text-center">Analyze Your Swing</h2>
+    <div className="max-w-2xl mx-auto mt-10 animate-fade-in">
+      <div className="glass-panel rounded-3xl overflow-hidden p-8 border border-white/10">
+        <h2 className="text-3xl font-extrabold text-white mb-6 text-center tracking-tight">
+          Analyze Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Swing</span>
+        </h2>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg text-sm">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleUpload} className="space-y-6">
+        <form onSubmit={handleUpload} className="space-y-8">
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Club Selection</label>
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-slate-300">Club Selection</label>
             <select
               value={club}
               onChange={(e) => setClub(e.target.value)}
-              className="w-full rounded-lg border-slate-300 shadow-sm focus:border-primary focus:ring-primary h-12 px-4 bg-slate-50 border"
+              className="w-full rounded-xl border-white/10 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary h-14 px-4 bg-black/40 text-white border transition-colors outline-none"
             >
-              {CLUBS.map(c => <option key={c} value={c}>{c}</option>)}
+              {CLUBS.map(c => <option key={c} value={c} className="bg-slate-900 text-white">{c}</option>)}
             </select>
           </div>
 
           <div className="flex items-center justify-center w-full">
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+            <label className="flex flex-col items-center justify-center w-full h-72 border-2 border-white/20 border-dashed rounded-2xl cursor-pointer bg-black/20 hover:bg-black/40 transition-all hover:border-primary/50 group">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                 {file ? (
                   <>
-                    <Video className="w-12 h-12 text-primary mb-3" />
-                    <p className="mb-2 text-sm text-slate-800 font-semibold">{file.name}</p>
-                    <p className="text-xs text-slate-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    <Video className="w-16 h-16 text-primary mb-4 animate-pulse-slow drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                    <p className="mb-2 text-md text-white font-bold">{file.name}</p>
+                    <p className="text-sm text-slate-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-10 h-10 mb-3 text-slate-400" />
-                    <p className="mb-2 text-sm text-slate-500"><span className="font-semibold text-primary">Click to upload</span> or drag and drop</p>
-                    <p className="text-xs text-slate-400">MP4 Slow Motion Video (Max 50MB)</p>
+                    <Upload className="w-12 h-12 mb-4 text-slate-400 group-hover:text-primary transition-colors duration-300" />
+                    <p className="mb-2 text-sm text-slate-300"><span className="font-bold text-primary">Click to upload</span> or drag and drop</p>
+                    <p className="text-xs text-slate-500 font-medium tracking-wide">MP4 SLOW MOTION (MAX 50MB)</p>
                   </>
                 )}
               </div>
@@ -98,7 +100,7 @@ export function UploadView({ onUploadSuccess }: Props) {
           <button
             type="submit"
             disabled={!file || isUploading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-base font-bold text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5"
           >
             {isUploading ? (
               <span className="flex items-center">

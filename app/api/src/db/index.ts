@@ -32,6 +32,7 @@ const initSchema = () => {
       club TEXT NOT NULL,
       videoUrl TEXT NOT NULL,
       analyzed BOOLEAN DEFAULT 0,
+      isFavorite BOOLEAN DEFAULT 0,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (playerId) REFERENCES players(id)
     );
@@ -86,9 +87,24 @@ const initSchema = () => {
       impactAngles TEXT,
       finishAngles TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id TEXT PRIMARY KEY,
+      swingId TEXT NOT NULL,
+      text TEXT NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (swingId) REFERENCES swings(id)
+    );
   `);
 
   console.log("Database schema initialized.");
+
+  const swingsInfo = db.prepare('PRAGMA table_info(swings)').all() as { name: string }[];
+  const hasIsFavorite = swingsInfo.some(col => col.name === 'isFavorite');
+  if (!hasIsFavorite) {
+    db.exec('ALTER TABLE swings ADD COLUMN isFavorite BOOLEAN DEFAULT 0;');
+    console.log("Added isFavorite column to swings table.");
+  }
 };
 
 export function setupDB() {
