@@ -317,7 +317,7 @@ export function AnalysisDashboard({ swingId, onDeleteSuccess }: Props) {
 
                 <h5 className="font-semibold text-white mb-2 uppercase text-xs tracking-wider">Recommended Drills</h5>
                 <ul className="space-y-2 mb-6">
-                  {(lesson.drills || []).map((drill: string, i: number) => (
+                  {(typeof lesson.drills === 'string' ? JSON.parse(lesson.drills) : (lesson.drills || [])).map((drill: string, i: number) => (
                     <li key={i} className="flex items-start text-sm text-slate-300">
                       <span className="text-primary mr-2">•</span>
                       <span>{drill}</span>
