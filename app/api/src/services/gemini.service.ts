@@ -3,7 +3,7 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { SwingMetrics } from "shared";
 
 const apiKey = process.env.GEMINI_API_KEY || "DUMMY_KEY";
-const MODEL_NAME = "gemini-3-flash";
+const MODEL_NAME = "gemini-2.5-flash";
 
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
