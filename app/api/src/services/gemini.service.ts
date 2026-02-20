@@ -47,27 +47,33 @@ export async function analyzeSwingVideo(videoPath: string, club: string, mimeTyp
     const uploadedFile = await uploadVideoToGemini(videoPath, mimeType);
 
     const prompt = `
-      You are an expert golf coach and biomechanics specialist. 
-      Analyze the provided golf swing video. The club being used is a ${club}.
+      You are an expert golf biomechanics analyst with a background in sports science and motion capture.
+      Analyze the provided golf swing video with extreme precision. The club used is a ${club}.
 
-      Perform a frame-by-frame analysis to locate four critical timestamps:
-      1. Address 
-      2. Top 
-      3. Impact 
-      4. Finish 
-      
-      For each of these 4 key positions, measure and estimate the following body angles to the best of your ability:
-      - spineAngle 
-      - shoulderTurn 
-      - hipTurn 
-      - leadArmAngle 
+      IMPORTANT CONTEXT:
+      - This video may be recorded in iPhone slow-motion (120fps or 240fps) which makes the swing appear much longer than real time.
+      - A real golf swing from address to finish takes approximately 1.0-1.5 seconds in real time.
+      - Timestamps should be the ACTUAL VIDEO PLAYBACK timestamps in milliseconds (not real-world time).
+      - Look for the FIRST full swing in the video if there are multiple or if there is setup/walking time.
 
-      Also estimate the following based on the entire swing:
-      - estimatedClubSpeed 
-      - estimatedClubPath 
-      - estimatedDistance 
+      STEP 1: Identify the 4 key positions by their visual characteristics:
+      - ADDRESS: The golfer is standing still over the ball, club grounded behind the ball, weight balanced, just before the takeaway begins.
+      - TOP OF BACKSWING: The club has reached its highest point behind the golfer, hands are at or above shoulder height, maximum shoulder rotation away from target.
+      - IMPACT: The exact frame where the clubhead meets the ball. Look for: the club is at the lowest point of its arc, the ball is still on the tee/ground or just leaving it, the golfer's hips are open toward the target.
+      - FINISH: The golfer has completed the follow-through, weight is on the front foot, belt buckle faces the target, club is wrapped behind the body.
 
-      Respond ONLY with a valid JSON object matching this TypeScript interface exactly:
+      STEP 2: For each position, measure these body angles by examining the golfer's body carefully:
+      - spineAngle: The forward tilt of the spine from vertical (0° = standing perfectly upright, 30-45° = typical address). Measured as the angle between vertical and the line from hips to shoulders in the down-the-line or face-on view.
+      - shoulderTurn: Rotation of the shoulder line relative to the target line (0° = square to target, 90° = shoulders perpendicular to target). At address this should be near 0°, at the top it should be 80-100°.
+      - hipTurn: Rotation of the hips relative to the target line (0° = square, 45° = typical top of backswing). Hips always rotate less than shoulders.
+      - leadArmAngle: The angle at the lead elbow (left elbow for right-handed golfer). 180° = perfectly straight arm, 90° = bent 90°. At address and impact this should be close to 170-180°.
+
+      STEP 3: Estimate these performance metrics for a ${club}:
+      - estimatedClubSpeed: in mph. A typical amateur driver is 80-100mph, mid-iron 70-85mph, wedge 60-75mph.
+      - estimatedClubPath: Describe as one of: "Inside-Out", "Straight", "Outside-In", "Slightly Inside-Out", "Slightly Outside-In"
+      - estimatedDistance: in yards. Be realistic for an amateur golfer.
+
+      Respond ONLY with a valid JSON object. No markdown, no explanation, just the JSON:
       {
         "timestampsMs": { "address": number, "top": number, "impact": number, "finish": number },
         "addressAngles": { "spineAngle": number, "shoulderTurn": number, "hipTurn": number, "leadArmAngle": number },
