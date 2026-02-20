@@ -147,6 +147,58 @@ app.post("/api/swings/:id/launch-monitor", upload.single("image"), async (req, r
   }
 });
 
+app.post("/api/swings/:id/reprocess", async (req, res) => {
+  const swingId = req.params.id;
+  try {
+    const swing = db.prepare('SELECT * FROM swings WHERE id = ?').get(swingId) as { id: string; club: string; videoUrl: string } | undefined;
+    if (!swing) return res.status(404).json({ error: "Swing not found" });
+
+    const fileName = path.basename(swing.videoUrl);
+    const absolutePath = path.join(UPLOADS_DIR, fileName);
+    const mimeType = fileName.endsWith('.mov') ? 'video/quicktime' : 'video/mp4';
+
+    db.prepare('DELETE FROM swing_metrics WHERE swingId = ?').run(swingId);
+    db.prepare('DELETE FROM lessons WHERE swingId = ?').run(swingId);
+    db.prepare('UPDATE swings SET analyzed = 0 WHERE id = ?').run(swingId);
+
+    console.log(`Reprocessing swing ${swingId}...`);
+    const aiData = await analyzeSwingVideo(absolutePath, swing.club, mimeType);
+
+    if (aiData) {
+      const insertMetrics = db.prepare(`
+        INSERT INTO swing_metrics (
+          id, swingId, addressTimeMs, topTimeMs, impactTimeMs, finishTimeMs,
+          addressAngles, topAngles, impactAngles, finishAngles,
+          estimatedClubSpeed, estimatedClubPath, estimatedDistance
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      insertMetrics.run(
+        uuidv4(), swingId,
+        aiData.timestampsMs.address, aiData.timestampsMs.top,
+        aiData.timestampsMs.impact, aiData.timestampsMs.finish,
+        JSON.stringify(aiData.addressAngles), JSON.stringify(aiData.topAngles),
+        JSON.stringify(aiData.impactAngles), JSON.stringify(aiData.finishAngles),
+        aiData.estimatedClubSpeed, aiData.estimatedClubPath, aiData.estimatedDistance
+      );
+
+      const roadmaps = await generateLessonRoadmap(aiData, swing.club);
+      if (roadmaps && roadmaps.length > 0) {
+        const insertLesson = db.prepare('INSERT INTO lessons (id, swingId, goalType, drills, aiReview) VALUES (?, ?, ?, ?, ?)');
+        for (const rm of roadmaps) {
+          insertLesson.run(uuidv4(), swingId, rm.goalType, JSON.stringify(rm.drills), rm.aiReview);
+        }
+      }
+
+      db.prepare('UPDATE swings SET analyzed = 1 WHERE id = ?').run(swingId);
+    }
+
+    res.json({ message: "Reprocessing complete", swingId });
+  } catch (e: unknown) {
+    console.error(e);
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
 app.get("/api/swings", (_req, res) => {
   try {
     const swings = db.prepare(`

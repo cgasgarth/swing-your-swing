@@ -84,8 +84,50 @@ export function AnalysisDashboard({ swingId, onDeleteSuccess }: Props) {
     );
   }
 
+  const handleReprocess = async () => {
+    setLoading(true);
+    try {
+      await axios.post(`${API_BASE}/swings/${swingId}/reprocess`);
+      const res = await axios.get(`${API_BASE}/swings/${swingId}`);
+      setData(res.data);
+    } catch {
+      console.error("Reprocessing failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!data || !data.metrics) {
-    return <div className="text-center p-8 bg-white rounded-xl shadow">Analysis still processing or failed to load.</div>;
+    return (
+      <div className="space-y-6">
+        {data?.swing && (
+          <div className="bg-black rounded-2xl overflow-hidden">
+            <video
+              src={`${API_BASE.replace('/api', '')}${data.swing.videoUrl}`}
+              controls
+              className="w-full max-h-[400px] object-contain"
+            />
+          </div>
+        )}
+        <div className="text-center p-8 glass-panel rounded-xl space-y-4">
+          <p className="text-slate-300 text-lg">Analysis failed or has not been processed yet.</p>
+          <button
+            onClick={handleReprocess}
+            className="px-6 py-3 bg-primary hover:bg-primary/80 text-white font-semibold rounded-xl transition-colors"
+          >
+            ⟳ Reprocess with AI
+          </button>
+          {data?.swing && (
+            <button
+              onClick={handleDelete}
+              className="ml-4 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold rounded-xl transition-colors"
+            >
+              Delete Swing
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   const m = data.metrics;
