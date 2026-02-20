@@ -1,0 +1,13 @@
+node_modules/
+.env
+dist/
+build/
+uploads/
+database.sqlite
+database.sqlite-wal
+database.sqlite-shm
+.DS_Store
+coverage/
+.bun
+bun.lock
+bun.lockb

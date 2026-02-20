@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #15803d;
+  --color-secondary: #facc15;
+}
+
+:root {
+  --background: #fdfdfd;
+  --foreground: #1a1a1a;
+  --primary: #15803d;
+  --secondary: #facc15;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}

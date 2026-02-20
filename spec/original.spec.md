@@ -1,0 +1,28 @@
+# Original User Request Spec
+
+- React app with tailwind css, clean UI.
+- App built around analyzing angles in golf swing.
+- Input: videos in mp4 format at slow motion.
+- Handle setting different clubs: irons through driver, including wedges and pitching wedges.
+- Handle putter.
+- Measure angles of body and positioning.
+- Toros and their angles loaded to compare against.
+- Breakdown similar to GolfTech (automatic).
+- .env handles Gemini API.
+- BFF layer for processing (backend does the work, frontend is just UI).
+- Store videos.
+- Track changes to mechanics over time.
+- Gallery of past swings.
+- Swing mechanics stored in a sqlite database for each video.
+- Video processing done automatically.
+- Use binary search on frames to find specific swing points.
+- Use latest/greatest human body angle analysis.
+- AI recommendations for drills.
+- Ingest pictures from a launch monitor tied to a swing.
+- Lesson roadmaps.
+- 'Ideal swing' vs 'Playable swing' goals.
+- Allow setting individual goals.
+- Estimate swing speed and club path at ball strike from video.
+- Estimates for distance based on club, angle of attack, swing speed.
+- Perfect TypeScript (no any, no invalid casting).
+- Max 600 line file limits.

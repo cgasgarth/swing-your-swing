@@ -1,0 +1,39 @@
+{
+    "name": "swing-your-swing",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "app/api",
+        "app/client",
+        "app/shared"
+    ],
+    "scripts": {
+        "dev:api": "cd app/api && bun run dev",
+        "dev:client": "cd app/client && bun run dev",
+        "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\"",
+        "build:api": "echo 'No build step for API'",
+        "build:client": "cd app/client && bun run build",
+        "build": "bun run build:api && bun run build:client",
+        "lint:api": "cd app/api && bun run lint",
+        "lint:client": "cd app/client && bun run lint",
+        "lint": "bun run lint:api && bun run lint:client",
+        "lint:fix:api": "cd app/api && bunx eslint src --fix",
+        "lint:fix:client": "cd app/client && bunx eslint src --fix",
+        "lint:fix": "bun run lint:fix:api && bun run lint:fix:client",
+        "test:api": "cd app/api && bun run test",
+        "test:client": "cd app/client && bun run test",
+        "test": "bun run test:api && bun run test:client",
+        "typecheck:api": "cd app/api && bun run typecheck",
+        "typecheck:client": "cd app/client && bun run typecheck",
+        "typecheck": "bun run typecheck:api && bun run typecheck:client"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@stylistic/eslint-plugin": "^5.9.0",
+        "concurrently": "^9.0.1",
+        "eslint-plugin-react-hooks": "^7.0.1",
+        "eslint-plugin-react-refresh": "^0.5.0",
+        "typescript-eslint": "^8.56.0"
+    }
+}
