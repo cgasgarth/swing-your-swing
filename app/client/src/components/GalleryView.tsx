@@ -80,7 +80,7 @@ export function GalleryView({ onSelectSwing }: Props) {
           >
             <div className="aspect-video bg-black relative flex items-center justify-center">
               <video
-                src={`http://localhost:4000${swing.videoUrl}`}
+                src={`${API_BASE.replace('/api', '')}${swing.videoUrl}`}
                 className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
               />
               <div className="absolute inset-0 flex items-center justify-center">

@@ -176,7 +176,7 @@ export function AnalysisDashboard({ swingId, onDeleteSuccess }: Props) {
           <div className="bg-black rounded-2xl shadow-lg overflow-hidden relative group aspect-square lg:aspect-auto">
             <video
               ref={videoRef}
-              src={`http://localhost:4000${data.swing.videoUrl}`}
+              src={`${API_BASE.replace('/api', '')}${data.swing.videoUrl}`}
               controls
               onTimeUpdate={handleTimeUpdate}
               className="w-full h-full object-contain max-h-[500px]"
