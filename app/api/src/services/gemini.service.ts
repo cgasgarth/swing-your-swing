@@ -6,12 +6,36 @@ const MODEL_NAME = "gemini-2.5-flash";
 
 const ai = new GoogleGenAI({ apiKey });
 
+async function waitForFileActive(fileName: string): Promise<void> {
+  const MAX_WAIT_MS = 120_000;
+  const POLL_INTERVAL_MS = 3_000;
+  const start = Date.now();
+
+  while (Date.now() - start < MAX_WAIT_MS) {
+    const file = await ai.files.get({ name: fileName });
+    if (file.state === "ACTIVE") {
+      console.log(`File ${fileName} is ACTIVE and ready for inference.`);
+      return;
+    }
+    if (file.state === "FAILED") {
+      throw new Error(`File ${fileName} processing failed.`);
+    }
+    console.log(`File ${fileName} state: ${file.state}. Waiting...`);
+    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+  throw new Error(`File ${fileName} did not become ACTIVE within ${MAX_WAIT_MS / 1000}s.`);
+}
+
 async function uploadVideoToGemini(filePath: string, mimeType: string) {
   const uploadResult = await ai.files.upload({
     file: filePath,
     config: { mimeType },
   });
   console.log(`Uploaded file to Gemini: ${uploadResult.name} (${uploadResult.uri})`);
+
+  // Wait for file to be processed before returning
+  await waitForFileActive(uploadResult.name!);
+
   return uploadResult;
 }
 
